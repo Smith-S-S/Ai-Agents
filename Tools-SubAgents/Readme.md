@@ -1,6 +1,6 @@
 # 🤖 AI Agents – Personal Assistant System with n8n
 
-A modular, configuration-driven personal assistant framework built using **n8n**, inspired by real-time voice AI like **Amazon Nova Sonic**. This system uses a central workflow to coordinate multiple specialized AI agents designed for real-world automation and productivity.
+A modular, configuration-driven personal assistant framework built using **n8n**, inspired by real-time voice AI like **Amazon Nova Sonic** https://bit.ly/4jLQxsx . This system uses a central workflow to coordinate multiple specialized AI agents designed for real-world automation and productivity.
 ---
 
 ## 🧠 Overview
@@ -20,6 +20,7 @@ This project focuses on orchestrating task-specific agents through a central wor
     ├── fitness_Agent.json            # Integrates with Fitbit for fitness data
     ├── personal_data_RAGagent.json   # Retrieves and processes personal data (RAG-based)
     └── research_Agent.json           # Conducts online research and summarization
+
 
 ---
 
