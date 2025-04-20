@@ -1,0 +1,407 @@
+{
+  "name": "voice_workFlow",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        140
+      ],
+      "id": "708869ac-1c26-4b25-a41b-5b2a222ea794",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xeRB8VGCNwo6fTUJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.query }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are the ultimate personal assistant. Your job is to send the user's query to the correct tool. You should never be writing emails, or creating even summaries, you just need to call the correct tool.\n\n## Tools\n- emailAgent: Use this tool to take action in email  \n- calendarAgent: Use this tool to take action in calendar  \n- fitnessAgent: Use this tool to retrieve fitness data. \n- data_agent: Use this tool to retrieve personal passwords and document expiry details.\n\n\n## Rules\n- Some actions require you to look up contact information first. For the following actions, you must get contact information and send that to the agent who needs it:\n  - sending emails  \n  - drafting emails  \n  - creating calendar event with attendee\n\n- ContactDb : Use this when you need to look up contact information like an email address. You need to use this tool BEFORE sending an email or BEFORE getting emails.\n\n- For fitness-related queries, you must extract the target date and format it as `yyyy-mm-dd`. Example: \"give me the fitness detail about yesterday\" → `2025-04-17`\n\n- For document expiry reminders:\n  - Use `data_agent` to check for any documents expiring within the next month.\n  - If a document is found expiring soon (e.g., passport expires on 10/05/2045 and today is 10/04/2045), gently remind the user.  \n  - Format the reminder in a helpful, non-alarming way.  \n    Example: “Just a heads-up — your passport is set to expire on 10/05/2045. Might be a good time to look into renewing it!”\n\n## Examples\n1)  \n- Input: send an email to nate herkelman asking him what time he wants to leave  \n  - Action: Use contactAgent to get nate herkelman's email  \n  - Action: Use emailAgent to send the email. You will pass the tool a query like:  \n    `send nate herkelman an email to ask what time he wants to leave. here is his email: [email address]`  \n- Output: The email has been sent to Nate Herkelman. Anything else I can help you with?\n\n2)  \n- Input: give me the fitness detail about yesterday  \n  - Action: Use fitnessAgent with date `2025-04-17`  \n- Output: just respond what the agent give you.\n\n3)  \n- Input: what's the wifi password?  \n  - Action: Use personaldata_agent to get the wifi password  \n- Output: The wifi password is: `supersecurewifi123`\n\n4)  \n- Input: (internal or background task) check for upcoming document expirations  \n  - Action: Use personaldata_agent to get document expiry dates  \n  - Output (if a document is expiring soon): Just a heads-up — your passport is set to expire on 10/05/2045. Might be a good time to look into renewing it!\n\n## Final Reminders\nHere is the current date/time: {{ $now }}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        100,
+        -80
+      ],
+      "id": "80b49f47-0a39-4e0d-85c4-3dd34e975a1d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "name": "emailTool",
+        "description": "call this tool to take any email related action",
+        "workflowId": {
+          "__rl": true,
+          "value": "1omhA6fNQ6rASbM4",
+          "mode": "list",
+          "cachedResultName": "Email_agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "text"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        200,
+        140
+      ],
+      "id": "d9a30d83-97ff-4914-afb4-9c113bfae867",
+      "name": "emailAgent"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1W9TMwH-3DuQHLiZ6TmAh23qK3j1tmJEaLgzTsvQFj0c",
+          "mode": "list",
+          "cachedResultName": "Personal_db",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W9TMwH-3DuQHLiZ6TmAh23qK3j1tmJEaLgzTsvQFj0c/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Contact_db",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W9TMwH-3DuQHLiZ6TmAh23qK3j1tmJEaLgzTsvQFj0c/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        80,
+        140
+      ],
+      "id": "d9d74ed4-8ef8-4878-9e30-2fcf85923111",
+      "name": "ContactDb",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VugDJQC2pY8FxpYn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "calenderAgent",
+        "description": "Call this to take any action related to calendar",
+        "workflowId": {
+          "__rl": true,
+          "value": "oQqJ6VJ1WS2RStHS",
+          "mode": "list",
+          "cachedResultName": "calendar event agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        140
+      ],
+      "id": "daf7cf17-d9ee-4e57-bf46-d58f3867c128",
+      "name": "calenderAgent"
+    },
+    {
+      "parameters": {
+        "name": "researchAgent",
+        "description": "Call this tool to search the internet to the user's question",
+        "workflowId": {
+          "__rl": true,
+          "value": "K9mprRaYmKnzIKJN",
+          "mode": "list",
+          "cachedResultName": "research_Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        140
+      ],
+      "id": "f92eb6f7-fef0-4af1-845a-d235a57b7766",
+      "name": "research agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        -80
+      ],
+      "id": "e313af94-56cc-4922-84af-cca8e4b7173c",
+      "name": "Webhook",
+      "webhookId": "1cee6ce0-2fb3-434a-be27-b11f0b86e976"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        -80
+      ],
+      "id": "46de18a7-52b2-44db-b206-9b299622537a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        560,
+        140
+      ],
+      "id": "c4107083-57e1-4ff9-949c-f88404279008",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.query }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -40,
+        140
+      ],
+      "id": "0563b4de-4525-45a1-b162-b49404ca3e07",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "name": "fitnessAgent",
+        "description": "Call this to take any action related to fitness",
+        "workflowId": {
+          "__rl": true,
+          "value": "myRQY4BQyyA6lIqb",
+          "mode": "list",
+          "cachedResultName": "fitness_Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        140
+      ],
+      "id": "856b78f0-dadd-4dd9-b123-b044f1b93459",
+      "name": "fitnessAgent"
+    },
+    {
+      "parameters": {
+        "name": "personaldata_agent",
+        "description": "Call this tool to retrieve personal passwords and document expiry details.",
+        "workflowId": {
+          "__rl": true,
+          "value": "NkS0AjuQORqfLghs",
+          "mode": "list",
+          "cachedResultName": "data_agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        840,
+        140
+      ],
+      "id": "2a7583ca-3ed0-4da4-b20d-abc5f817f4e7",
+      "name": "personaldata_agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "emailAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ContactDb": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calenderAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "research agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fitnessAgent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "personaldata_agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "281aa980-074c-4505-bdae-2dd20fff0988",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b77cddd74e292a79619f62a1ac3592b8398589a6e1929019c4d91ddf8394c2e6"
+  },
+  "id": "p4UkzTAtr9SWOdsI",
+  "tags": []
+}
