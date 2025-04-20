@@ -3,6 +3,11 @@
 A modular, configuration-driven personal assistant framework built using **n8n**, inspired by real-time voice AI like **Amazon Nova Sonic** https://bit.ly/4jLQxsx . This system uses a central workflow to coordinate multiple specialized AI agents designed for real-world automation and productivity.
 ---
 
+## 🔗 Demo
+Linkdin Post:👉 https://bit.ly/4cPZXRy
+
+---
+
 ## 🧠 Overview
 ![Screenshot 2025-04-20 193143](https://github.com/user-attachments/assets/1d80aa14-1050-4223-87a6-12113779e940)
 This project focuses on orchestrating task-specific agents through a central workflow (`Main_workFlow.json`). Each sub-agent is defined using a JSON config and performs a specific function (e.g., email handling, calendar management, fitness tracking). Agents can be easily added, modified, or removed for flexibility and scalability.
