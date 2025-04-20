@@ -1,0 +1,228 @@
+{
+  "name": "fitness_Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -960,
+        720
+      ],
+      "id": "6f6f1f1f-7117-40a0-8e24-65708941fc03",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the input query to extract date\nconst query = $input.item.json.query;\nlet dateMatch;\nlet specificDate;\n\n// Match patterns like \"for 2025-04-17\" or \"on April 17\" or \"yesterday\" or \"today\"\nif (query.includes('yesterday')) {\n  const yesterday = new Date();\n  yesterday.setDate(yesterday.getDate() - 1);\n  specificDate = yesterday.toISOString().split('T')[0];\n} else if (query.includes('today')) {\n  specificDate = new Date().toISOString().split('T')[0];\n} else if ((dateMatch = query.match(/(\\d{4}-\\d{2}-\\d{2})/)) !== null) {\n  // Format: YYYY-MM-DD\n  specificDate = dateMatch[1];\n} else if ((dateMatch = query.match(/(?:on|for)\\s+([A-Za-z]+)\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,\\s+(\\d{4}))?/i)) !== null) {\n  // Format: \"April 17\" or \"April 17, 2025\"\n  const month = dateMatch[1];\n  const day = dateMatch[2].padStart(2, '0');\n  const year = dateMatch[3] || new Date().getFullYear().toString();\n  \n  const monthMap = {\n    'january': '01', 'february': '02', 'march': '03', 'april': '04',\n    'may': '05', 'june': '06', 'july': '07', 'august': '08',\n    'september': '09', 'october': '10', 'november': '11', 'december': '12'\n  };\n  \n  const monthNum = monthMap[month.toLowerCase()];\n  if (monthNum) {\n    specificDate = `${year}-${monthNum}-${day}`;\n  }\n} else {\n  // Default to yesterday if no date is specified\n  const yesterday = new Date();\n  yesterday.setDate(yesterday.getDate() - 1);\n  specificDate = yesterday.toISOString().split('T')[0];\n}\n\nreturn {\n  json: {\n    date: specificDate,\n    originalQuery: query\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        720
+      ],
+      "id": "db5c0900-1af9-4279-89eb-3d44c1bb3640",
+      "name": "Extract Date From Query"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.fitbit.com/1/user/-/activities/date/{{ $json.date }}.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -460,
+        520
+      ],
+      "id": "fa561090-5fe3-4bb4-b53d-fc5174e9cc32",
+      "name": "Get Activity Data",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "V7o7tOYD0jo55zyn",
+          "name": "fitbit"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Given the fitness data from Fitbit, please provide a brief summary focusing specifically on:\n1. How many calories I burned (compare with my goal of {{ $json.goals.caloriesOut }} calories) burnt calories {{ $json.summary.caloriesOut }}\n\n2. My maximum heart rate {{ $json['activities-heart'][0].value.heartRateZones[0].max }}\nKeep your response concise (2-3 sentences) and informative. Include any interesting patterns or health insights if you notice them, and let me know if I met my daily calorie goal.",
+        "options": {
+          "systemMessage": "You are a helpful fitness assistant that analyzes Fitbit data. When responding to queries, use the data provided by the tools to give insights about fitness metrics. Focus on providing information about calories burned and heart rate when asked. Be concise but informative and encouraging. Format numbers nicely and provide context for the metrics (e.g., whether values are in normal/healthy ranges)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -120,
+        700
+      ],
+      "id": "38499d17-1e92-4cba-a39d-a4dd2e4717f5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        900
+      ],
+      "id": "738ed5d0-bd7b-46a0-a2ae-369e13de1dc5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xeRB8VGCNwo6fTUJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28dc1ff4-8ab9-494d-97dc-badc1b18698f",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        700
+      ],
+      "id": "5d92700d-d1a5-42d4-8ca6-6878290fd31b",
+      "name": "Return Response"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.fitbit.com/1/user/-/activities/heart/date/{{$node[\"Extract Date From Query\"].json[\"date\"]}}/1d.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -440,
+        780
+      ],
+      "id": "68f1f37b-396a-4ee4-8fc5-6c7fe843e674",
+      "name": "Get Heart Rate Data1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "V7o7tOYD0jo55zyn",
+          "name": "fitbit"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "get my fitness data for 2025-04-17"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Extract Date From Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Date From Query": {
+      "main": [
+        [
+          {
+            "node": "Get Activity Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Heart Rate Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Activity Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Heart Rate Data1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a57200ce-fc57-4d3f-ba18-aedc19e978be",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b77cddd74e292a79619f62a1ac3592b8398589a6e1929019c4d91ddf8394c2e6"
+  },
+  "id": "myRQY4BQyyA6lIqb",
+  "tags": []
+}

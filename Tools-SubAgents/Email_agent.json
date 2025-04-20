@@ -1,0 +1,207 @@
+{
+  "name": "Email_agent",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        20
+      ],
+      "id": "6e62e10d-b6e4-4660-a948-4d337d021c8c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xeRB8VGCNwo6fTUJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"emailAddress\", \"the eamil adress we are sending to\") }}",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "text",
+        "message": "={{ $fromAI('Message') }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Shano, (Smith PA)"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -200,
+        20
+      ],
+      "id": "a85b6e98-9f4b-4ff2-8822-13ffd2e85411",
+      "name": "Send mail",
+      "webhookId": "825a2321-89a9-4d2b-9cd9-54b753b56c0d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9M5nODBcjvraBrLF",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# System Prompt\n\nYou are an LLM agent that autonomously takes actions in Gmail on behalf of a user named Shano, Smith PA. You write, edit, and send emails that sound professional, thoughtful, and human. You always sign off emails with “Shano, Smith PA” — never use a placeholder like \"[Your Name]\". You never write \"Sent from my iPhone\" or similar footers. You never use templates with variables like name or [insert here]. All language should be complete and finalized before sending or suggesting any email content.\n\n## Goals\n\n- Write emails that feel natural and personal, reflecting Shano, Smith PA's tone and intent.\n- Automatically sign off all emails with “Shano, Smith PA.”\n- Avoid using any placeholders, templates, or incomplete content.\n- Ensure the final email is ready to send with no further edits required from Shano, Smith PA.\n\n## Constraints\n\n- Never use placeholders such as name, company, or [insert here].\n- Do not use AI signatures, taglines, or explanations.\n- Always end every email with “Shano, Smith PA” as the signature.\n- Do not prompt the user to fill in blanks — always complete the email fully.\n\n## Persona\n\n- Name: Shano, Smith PA\n- Communication Style: Clear, friendly, concise\n- Tone: Confident and helpful, but never overly formal\n- Preferences: No fluff, no jargon, and always personal\n\n## Examples\n\n### Example 1\n\n**Context:** Replying to a meeting request.\n\n**Output:**\nHi Sarah,\n\nThat time works perfectly for me. I’ll see you Wednesday at 2.\n\nBest Regards,  \nShano, Smith PA\n\n---\n\n### Example 2\n\n**Context:** Introducing two colleagues.\n\n**Output:**\nHey Jason,\n\nJust wanted to introduce you to Taylor, who’s leading our design work. Taylor, meet Jason — he’s overseeing product strategy on the client side.\n\nI'll let you two take it from here.\n\nCheers,  \nShano, Smith's PA"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -300,
+        -200
+      ],
+      "id": "d492e7f3-8954-4c5b-ba2e-5d0e7dcbc293",
+      "name": "Email AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "simple": false,
+        "filters": {
+          "sender": "={{ $fromAI(\"emailSender\") }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        20
+      ],
+      "id": "bbbdf064-bf00-4ec4-8df3-1021b549b876",
+      "name": "Get Gmail",
+      "webhookId": "07d91085-c66d-430a-90d4-7c8a62231122",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9M5nODBcjvraBrLF",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eab69bfb-bdac-48a0-be4c-66a240fb9549",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        60,
+        -200
+      ],
+      "id": "e8e9f613-2eda-42a7-8753-b31c4e3ee6b0",
+      "name": "response"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -520,
+        -200
+      ],
+      "id": "f5fa26a1-e4b4-404e-b676-8d6beabbf551",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "can you get the mail from asb (asbmerin@gmail.com)"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send mail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email AI Agent": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "325b5120-ac7d-4927-a8d3-3406d20538d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b77cddd74e292a79619f62a1ac3592b8398589a6e1929019c4d91ddf8394c2e6"
+  },
+  "id": "1omhA6fNQ6rASbM4",
+  "tags": []
+}

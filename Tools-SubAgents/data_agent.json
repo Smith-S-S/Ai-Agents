@@ -1,0 +1,164 @@
+{
+  "name": "data_agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -200
+      ],
+      "id": "5b5df82e-7ee5-442d-95ad-d4e0669a2e0f",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.querey }}",
+        "options": {
+          "systemMessage": "Your are my personal rag system i have my person details like passwords in the pesonalData doc\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -120,
+        -200
+      ],
+      "id": "48032dfe-289c-450a-961f-7e8825f95167",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        40
+      ],
+      "id": "89c1fa68-aa1f-47cf-b07b-88ff8fdbea2d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xeRB8VGCNwo6fTUJ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "16TIxS8PkkmhVpPrRH6VGubbZBf9_BuR1IzIlpwrK9fw"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        40,
+        40
+      ],
+      "id": "2c94c767-3aba-40cd-a713-2e696a3b2f66",
+      "name": "personalData",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "r8neeyjbXtkmpEjP",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "01853642-a342-4c9c-b58f-08c90ed4f06f",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -200
+      ],
+      "id": "33c80bb1-64ad-439e-a6e4-85b38ccecd70",
+      "name": "response"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "querey": "get my home wifi password"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "personalData": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "69e1ca8d-cc09-4580-aef6-ec20379dd0b3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b77cddd74e292a79619f62a1ac3592b8398589a6e1929019c4d91ddf8394c2e6"
+  },
+  "id": "NkS0AjuQORqfLghs",
+  "tags": []
+}
