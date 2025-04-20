@@ -11,8 +11,8 @@ This project focuses on orchestrating task-specific agents through a central wor
 
 ## 📂 Project Structure
 
-.
-├── Main_workFlow.json                 # Central orchestration workflow
+<pre>
+├── Main_workFlow.json                # Central orchestration workflow
 ├── README.md                         # Project overview and usage guide
 └── Tools-SubAgents/
     ├── Email_agent.json              # Handles email-related tasks
@@ -20,7 +20,7 @@ This project focuses on orchestrating task-specific agents through a central wor
     ├── fitness_Agent.json            # Integrates with Fitbit for fitness data
     ├── personal_data_RAGagent.json   # Retrieves and processes personal data (RAG-based)
     └── research_Agent.json           # Conducts online research and summarization
-
+</pre>
 
 ---
 
